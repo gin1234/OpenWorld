@@ -12,3 +12,7 @@ DerivedDataCache/
 *.pdb
 *.pch
 *.obj
+
+# Claude Code
+.claude/
+CLAUDE.md
