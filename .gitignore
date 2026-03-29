@@ -1,0 +1,14 @@
+# Unreal Engine build files
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+
+# Build artifacts
+*.pdb
+*.pch
+*.obj
