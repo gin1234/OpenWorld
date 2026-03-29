@@ -12,6 +12,9 @@ public class OpenWorld : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
+		// Puerts for TypeScript scripting
+		PrivateDependencyModuleNames.Add("Puerts");
+
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
