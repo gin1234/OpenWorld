@@ -15,6 +15,17 @@ public class OpenWorld : ModuleRules
 		// Puerts for TypeScript scripting
 		PrivateDependencyModuleNames.Add("Puerts");
 
+		PublicIncludePaths.AddRange(new string[] {
+			"OpenWorld",
+            "OpenWorld/TSEngine",
+            "OpenWorld/TSEngine/core",
+            "OpenWorld/TSEngine/core/config",
+            "OpenWorld/TSEngine/core/entity",
+            "OpenWorld/TSEngine/core/transport",
+            "OpenWorld/TSEngine/wrap",
+            "OpenWorld/TSEngine/common"
+        });
+
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
