@@ -11,8 +11,8 @@ namespace TSEngine {
 		ResourceManager& operator=(const ResourceManager&) = delete;
 		
 		static ResourceManager* GetInstance() {
-			static ResourceManager* instance;
-			return instance;
+			static ResourceManager instance;
+			return &instance;
 		};
 
 		bool Load(Entity* TsEntity, Prefab& Prefab);

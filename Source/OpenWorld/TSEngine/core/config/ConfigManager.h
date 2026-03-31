@@ -7,8 +7,8 @@ namespace TSEngine {
 		ConfigManager& operator=(const ConfigManager&) = delete;
 
 		static ConfigManager* getInstance() {
-			static ConfigManager* instance;
-			return instance;
+			static ConfigManager instance;
+			return &instance;
 		};
 
 		void LoadAll();

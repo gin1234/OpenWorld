@@ -3,8 +3,8 @@
 namespace TSEngine {
 	MessageManager* MessageManager::getInstance()
 	{
-		static MessageManager* instance;
-		return instance;
+		static MessageManager instance;
+		return &instance;
 	}
 	bool MessageManager::sendMessage(Message msg)
 	{	

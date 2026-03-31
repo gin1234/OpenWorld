@@ -13,8 +13,8 @@ namespace TSEngine {
 
 	EntityManager* EntityManager::GetInstance()
 	{
-		static EntityManager* instance;
-		return instance;
+		static EntityManager instance;
+		return &instance;
 	}
 	int EntityManager::CreateEntity(const std::string& EntityType)
 	{	

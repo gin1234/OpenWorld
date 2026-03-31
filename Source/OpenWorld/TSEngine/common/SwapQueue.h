@@ -6,11 +6,11 @@ namespace TSEngine {
     class SwapQueue {
     public:
 
-        // 禁用拷贝构造和赋值
+        // Double buffer queue, push operation writes to queue
         SwapQueue(const SwapQueue&) = delete;
         SwapQueue& operator=(const SwapQueue&) = delete;
 
-        // 推送数据到队列
+        // Push value to queue
        void push(T& value) {
         std::lock_guard<std::mutex> lock(mutex_);
         left_.push(value);
