@@ -16,3 +16,6 @@ DerivedDataCache/
 # Claude Code
 .claude/
 CLAUDE.md
+
+# Node modules
+node_modules/
