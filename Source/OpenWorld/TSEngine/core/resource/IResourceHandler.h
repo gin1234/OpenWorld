@@ -33,9 +33,12 @@ public:
                                 const std::map<std::string, std::string>& Properties) = 0;
 };
 
-// 可播放资源接口 (骨骼动画、声音、粒子)
+// 可播放资源接口 (骨骼动画、声音、粒子) - 同时需要创建 Actor
 class IPlayableResourceHandler : public IResourceHandler {
 public:
+    virtual AActor* CreateActor(Entity* TsEntity, UObject* LoadedResource,
+                                const std::map<std::string, std::string>& Properties) = 0;
+
     virtual void Play(Entity* TsEntity, UObject* Target,
                      const std::map<std::string, std::string>& Params) = 0;
     virtual void Stop(Entity* TsEntity, UObject* Target) {}

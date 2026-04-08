@@ -8,7 +8,7 @@
 
 namespace TSEngine {
 
-static TStaticResourceHandler<ParticleSystemHandler> _RegisterPlayable("ParticleSystem");
+static TStaticPlayableResourceHandler<ParticleSystemHandler> _RegisterPlayable("ParticleSystem");
 
 ParticleSystemHandler::ParticleSystemHandler() = default;
 

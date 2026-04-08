@@ -17,7 +17,7 @@ public:
                           FResourceLoadedCallback Callback) override;
 
     virtual AActor* CreateActor(Entity* TsEntity, UObject* LoadedSound,
-                                const std::map<std::string, std::string>& Properties);
+                                const std::map<std::string, std::string>& Properties) override;
 
     virtual void Play(Entity* TsEntity, UObject* Target,
                      const std::map<std::string, std::string>& Params) override;

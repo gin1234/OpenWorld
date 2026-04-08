@@ -9,7 +9,7 @@
 
 namespace TSEngine {
 
-static TStaticResourceHandler<SkeletalMeshHandler> _RegisterPlayable("SkeletalMesh");
+static TStaticPlayableResourceHandler<SkeletalMeshHandler> _RegisterPlayable("SkeletalMesh");
 
 SkeletalMeshHandler::SkeletalMeshHandler() = default;
 
@@ -45,7 +45,6 @@ void SkeletalMeshHandler::OnMeshLoaded(FSoftObjectPath Path, FResourceLoadedCall
 }
 
 AActor* SkeletalMeshHandler::CreateActor(Entity* TsEntity, UObject* LoadedMesh,
-                                USkeleton* Skeleton,
                                 const std::map<std::string, std::string>& Properties) {
     USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(LoadedMesh);
     if (!SkeletalMesh) {
@@ -100,9 +99,6 @@ AActor* SkeletalMeshHandler::CreateActor(Entity* TsEntity, UObject* LoadedMesh,
     USkeletalMeshComponent* MeshComponent = Actor->GetSkeletalMeshComponent();
     if (MeshComponent) {
         MeshComponent->SetSkeletalMesh(SkeletalMesh);
-        if (Skeleton) {
-            MeshComponent->SetAnimInstanceClass(Skeleton->GetAnimClass());
-        }
         MeshComponent->SetWorldScale3D(Scale);
     }
 
@@ -140,12 +136,6 @@ void SkeletalMeshHandler::Play(Entity* TsEntity, UObject* Target,
         return;
     }
 
-    UAnimInstance* AnimInstance = GetAnimInstance(Actor);
-    if (!AnimInstance) {
-        UE_LOG(LogTemp, Error, TEXT("SkeletalMeshHandler::Play - No AnimInstance"));
-        return;
-    }
-
     FAnimationParams AnimParams = PropertyParser::ParseAnimationParams(Params);
 
     if (AnimParams.AnimationName != NAME_None) {
@@ -153,9 +143,6 @@ void SkeletalMeshHandler::Play(Entity* TsEntity, UObject* Target,
         if (Animation) {
             MeshComponent->PlayAnimation(Animation, AnimParams.bLooping);
         } else {
-            // Try to play via AnimInstance
-            AnimInstance->Montage_Play(nullptr, AnimParams.PlayRate);
-
             UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshHandler::Play - Animation not found: %s"),
                    *AnimParams.AnimationName.ToString());
         }

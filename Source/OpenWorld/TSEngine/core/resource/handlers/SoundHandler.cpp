@@ -9,7 +9,7 @@
 
 namespace TSEngine {
 
-static TStaticResourceHandler<SoundHandler> _RegisterPlayable("Sound");
+static TStaticPlayableResourceHandler<SoundHandler> _RegisterPlayable("Sound");
 
 SoundHandler::SoundHandler() = default;
 
@@ -122,7 +122,6 @@ void SoundHandler::Play(Entity* TsEntity, UObject* Target,
 
     AudioComp->SetVolumeMultiplier(SoundParams.VolumeMultiplier);
     AudioComp->SetPitchMultiplier(SoundParams.PitchMultiplier);
-    AudioComp->SetSound(Cast<USoundBase>(Target));
 
     AudioComp->Play(SoundParams.StartTime);
 
