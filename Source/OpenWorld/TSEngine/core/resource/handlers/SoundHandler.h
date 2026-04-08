@@ -19,11 +19,9 @@ public:
     virtual AActor* CreateActor(Entity* TsEntity, UObject* LoadedSound,
                                 const std::map<std::string, std::string>& Properties) override;
 
-    virtual void Play(Entity* TsEntity, UObject* Target,
-                     const std::map<std::string, std::string>& Params) override;
-
-    virtual void Stop(Entity* TsEntity, UObject* Target) override;
-    virtual void Pause(Entity* TsEntity, UObject* Target) override;
+    // 统一 Update 接口 - 根据 Operation 分发到 Play/Stop/Pause
+    virtual bool Update(Entity* TsEntity, UObject* Target,
+                       std::map<std::string, std::string> Params) override;
 
     virtual void ApplyProperties(UObject* Target,
                                 const std::map<std::string, std::string>& Properties) override;

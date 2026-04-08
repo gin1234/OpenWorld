@@ -33,16 +33,15 @@ public:
                                 const std::map<std::string, std::string>& Properties) = 0;
 };
 
-// 可播放资源接口 (骨骼动画、声音、粒子) - 同时需要创建 Actor
+// 可播放资源接口 (骨骼动画、声音、粒子)
 class IPlayableResourceHandler : public IResourceHandler {
 public:
     virtual AActor* CreateActor(Entity* TsEntity, UObject* LoadedResource,
                                 const std::map<std::string, std::string>& Properties) = 0;
 
-    virtual void Play(Entity* TsEntity, UObject* Target,
-                     const std::map<std::string, std::string>& Params) = 0;
-    virtual void Stop(Entity* TsEntity, UObject* Target) {}
-    virtual void Pause(Entity* TsEntity, UObject* Target) {}
+    // 统一的 Update 接口 - 根据 Params 分发到 Play/Stop/Pause
+    virtual bool Update(Entity* TsEntity, UObject* Target,
+                       std::map<std::string, std::string> Params) = 0;
 };
 
 // 可更新类型接口 (UI) - 资源常驻内存，支持属性更新

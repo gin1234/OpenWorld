@@ -112,34 +112,38 @@ UParticleSystemComponent* ParticleSystemHandler::GetParticleComponent(AActor* Ac
     return Actor->FindComponentByClass<UParticleSystemComponent>();
 }
 
-void ParticleSystemHandler::Play(Entity* TsEntity, UObject* Target,
-                         const std::map<std::string, std::string>& Params) {
+bool ParticleSystemHandler::Update(Entity* TsEntity, UObject* Target,
+                          std::map<std::string, std::string> Params) {
     AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
+    if (!Actor) return false;
 
     UParticleSystemComponent* ParticleComp = GetParticleComponent(Actor);
     if (!ParticleComp) {
-        UE_LOG(LogTemp, Error, TEXT("ParticleSystemHandler::Play - No ParticleSystemComponent"));
-        return;
+        UE_LOG(LogTemp, Error, TEXT("ParticleSystemHandler::Update - No ParticleSystemComponent"));
+        return false;
     }
 
-    ParticleComp->Activate(true);
+    auto OpIt = Params.find("Operation");
+    if (OpIt == Params.end()) {
+        return false;
+    }
 
-    UE_LOG(LogTemp, Log, TEXT("ParticleSystemHandler::Play - Activated particle for entity %d"),
-           TsEntity->ID);
-}
+    std::string Operation = OpIt->second;
 
-void ParticleSystemHandler::Stop(Entity* TsEntity, UObject* Target) {
-    AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
+    if (Operation == "Play") {
+        ParticleComp->Activate(true);
+        UE_LOG(LogTemp, Log, TEXT("ParticleSystemHandler::Update - Play for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
+    else if (Operation == "Stop") {
+        ParticleComp->Deactivate();
+        UE_LOG(LogTemp, Log, TEXT("ParticleSystemHandler::Update - Stop for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
 
-    UParticleSystemComponent* ParticleComp = GetParticleComponent(Actor);
-    if (!ParticleComp) return;
-
-    ParticleComp->Deactivate();
-
-    UE_LOG(LogTemp, Log, TEXT("ParticleSystemHandler::Stop - Stopped particle for entity %d"),
-           TsEntity->ID);
+    return false;
 }
 
 void ParticleSystemHandler::ApplyProperties(UObject* Target,

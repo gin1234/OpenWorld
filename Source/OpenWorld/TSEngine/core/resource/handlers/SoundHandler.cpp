@@ -107,52 +107,47 @@ UAudioComponent* SoundHandler::GetAudioComponent(AActor* Actor) {
     return Actor->FindComponentByClass<UAudioComponent>();
 }
 
-void SoundHandler::Play(Entity* TsEntity, UObject* Target,
-                     const std::map<std::string, std::string>& Params) {
+bool SoundHandler::Update(Entity* TsEntity, UObject* Target,
+                         std::map<std::string, std::string> Params) {
     AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
+    if (!Actor) return false;
 
     UAudioComponent* AudioComp = GetAudioComponent(Actor);
     if (!AudioComp) {
-        UE_LOG(LogTemp, Error, TEXT("SoundHandler::Play - No AudioComponent"));
-        return;
+        UE_LOG(LogTemp, Error, TEXT("SoundHandler::Update - No AudioComponent"));
+        return false;
     }
 
-    FSoundParams SoundParams = PropertyParser::ParseSoundParams(Params);
+    auto OpIt = Params.find("Operation");
+    if (OpIt == Params.end()) {
+        return false;
+    }
 
-    AudioComp->SetVolumeMultiplier(SoundParams.VolumeMultiplier);
-    AudioComp->SetPitchMultiplier(SoundParams.PitchMultiplier);
+    std::string Operation = OpIt->second;
 
-    AudioComp->Play(SoundParams.StartTime);
+    if (Operation == "Play") {
+        FSoundParams SoundParams = PropertyParser::ParseSoundParams(Params);
+        AudioComp->SetVolumeMultiplier(SoundParams.VolumeMultiplier);
+        AudioComp->SetPitchMultiplier(SoundParams.PitchMultiplier);
+        AudioComp->Play(SoundParams.StartTime);
+        UE_LOG(LogTemp, Log, TEXT("SoundHandler::Update - Play for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
+    else if (Operation == "Stop") {
+        AudioComp->Stop();
+        UE_LOG(LogTemp, Log, TEXT("SoundHandler::Update - Stop for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
+    else if (Operation == "Pause") {
+        AudioComp->Pause();
+        UE_LOG(LogTemp, Log, TEXT("SoundHandler::Update - Pause for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
 
-    UE_LOG(LogTemp, Log, TEXT("SoundHandler::Play - Playing sound for entity %d"),
-           TsEntity->ID);
-}
-
-void SoundHandler::Stop(Entity* TsEntity, UObject* Target) {
-    AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
-
-    UAudioComponent* AudioComp = GetAudioComponent(Actor);
-    if (!AudioComp) return;
-
-    AudioComp->Stop();
-
-    UE_LOG(LogTemp, Log, TEXT("SoundHandler::Stop - Stopped sound for entity %d"),
-           TsEntity->ID);
-}
-
-void SoundHandler::Pause(Entity* TsEntity, UObject* Target) {
-    AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
-
-    UAudioComponent* AudioComp = GetAudioComponent(Actor);
-    if (!AudioComp) return;
-
-    AudioComp->Pause();
-
-    UE_LOG(LogTemp, Log, TEXT("SoundHandler::Pause - Paused sound for entity %d"),
-           TsEntity->ID);
+    return false;
 }
 
 void SoundHandler::ApplyProperties(UObject* Target,

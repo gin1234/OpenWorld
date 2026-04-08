@@ -109,65 +109,43 @@ bool ResourceManager::Update(const std::string& Type, Entity* TsEntity,
         return false;
     }
 
-    IUpdatableResourceHandler* UpdatableHandler =
-        dynamic_cast<IUpdatableResourceHandler*>(it->second);
-
-    if (!UpdatableHandler) {
-        return false;
-    }
-
     UObject* Resource = GetLoadedResource(TsEntity->ID, Type);
     if (!Resource) {
         return false;
     }
 
-    return UpdatableHandler->Update(TsEntity, Resource, Property);
-}
-
-bool ResourceManager::Play(const std::string& Type, Entity* TsEntity,
-                          std::map<std::string, std::string> Params) {
-    auto it = PlayableHandlers.find(Type);
-    if (it == PlayableHandlers.end()) {
-        return false;
+    // Try playable handler first (SkeletalMesh, Sound, ParticleSystem)
+    IPlayableResourceHandler* PlayableHandler = dynamic_cast<IPlayableResourceHandler*>(it->second);
+    if (PlayableHandler) {
+        return PlayableHandler->Update(TsEntity, Resource, Property);
     }
 
-    UObject* Resource = GetLoadedResource(TsEntity->ID, Type);
-    if (!Resource) {
-        return false;
+    // Try updatable handler (Widget)
+    IUpdatableResourceHandler* UpdatableHandler = dynamic_cast<IUpdatableResourceHandler*>(it->second);
+    if (UpdatableHandler) {
+        return UpdatableHandler->Update(TsEntity, Resource, Property);
     }
 
-    it->second->Play(TsEntity, Resource, Params);
-    return true;
-}
-
-bool ResourceManager::Stop(const std::string& Type, Entity* TsEntity) {
-    auto it = PlayableHandlers.find(Type);
-    if (it == PlayableHandlers.end()) {
-        return false;
+    // Try load-only handler (apply transform to Actor)
+    ILoadOnlyResourceHandler* LoadOnlyHandler = dynamic_cast<ILoadOnlyResourceHandler*>(it->second);
+    if (LoadOnlyHandler) {
+        // For StaticMesh, apply transform updates
+        AActor* Actor = Cast<AActor>(Resource);
+        if (Actor) {
+            for (const auto& [Key, Value] : Property) {
+                if (Key == "Location") {
+                    Actor->SetActorLocation(PropertyParser::ParseVector(Value));
+                } else if (Key == "Rotation") {
+                    Actor->SetActorRotation(PropertyParser::ParseRotator(Value));
+                } else if (Key == "Scale") {
+                    Actor->SetActorScale3D(PropertyParser::ParseVector(Value));
+                }
+            }
+        }
+        return true;
     }
 
-    UObject* Resource = GetLoadedResource(TsEntity->ID, Type);
-    if (!Resource) {
-        return false;
-    }
-
-    it->second->Stop(TsEntity, Resource);
-    return true;
-}
-
-bool ResourceManager::Pause(const std::string& Type, Entity* TsEntity) {
-    auto it = PlayableHandlers.find(Type);
-    if (it == PlayableHandlers.end()) {
-        return false;
-    }
-
-    UObject* Resource = GetLoadedResource(TsEntity->ID, Type);
-    if (!Resource) {
-        return false;
-    }
-
-    it->second->Pause(TsEntity, Resource);
-    return true;
+    return false;
 }
 
 UObject* ResourceManager::GetLoadedResource(int32 EntityId, const std::string& Type) {

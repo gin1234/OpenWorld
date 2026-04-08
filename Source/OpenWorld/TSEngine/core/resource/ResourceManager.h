@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "Engine/StreamableManager.h"
 #include "../config/PrefabCfg.h"
+#include "PropertyParser.h"
 
 namespace TSEngine {
 
@@ -19,15 +20,13 @@ public:
 
     bool Load(Entity* TsEntity, const Prefab& Prefab);
 
+    // 统一 Update - 根据资源类型分发到对应处理器
+    // SkeletalMesh: Params = {"Operation": "Play", "AnimationName": "Run", ...}
+    // Sound: Params = {"Operation": "Play", "VolumeMultiplier": "1.0", ...} 或 Stop/Pause
+    // ParticleSystem: Params = {"Operation": "Play"} 或 Stop
+    // Widget: Params = {"Visibility": "Hidden", "RenderOpacity": "0.5"}
     bool Update(const std::string& Type, Entity* TsEntity,
                std::map<std::string, std::string> Property);
-
-    bool Play(const std::string& Type, Entity* TsEntity,
-             std::map<std::string, std::string> Params);
-
-    bool Stop(const std::string& Type, Entity* TsEntity);
-
-    bool Pause(const std::string& Type, Entity* TsEntity);
 
     UObject* GetLoadedResource(int32 EntityId, const std::string& Type);
 

@@ -12,9 +12,6 @@ struct AutoRegisterForResourceManager {
             .Function("instance", MakeFunction(&ResourceManager::GetInstance))
             .Function("load", MakeFunction(&ResourceManager::Load))
             .Function("update", MakeFunction(&ResourceManager::Update))
-            .Function("play", MakeFunction(&ResourceManager::Play))
-            .Function("stop", MakeFunction(&ResourceManager::Stop))
-            .Function("pause", MakeFunction(&ResourceManager::Pause))
             .Register();
     }
 };

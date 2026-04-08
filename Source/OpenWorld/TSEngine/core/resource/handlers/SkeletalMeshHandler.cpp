@@ -121,48 +121,53 @@ UAnimInstance* SkeletalMeshHandler::GetAnimInstance(AActor* Actor) {
     return MeshComponent->GetAnimInstance();
 }
 
-void SkeletalMeshHandler::Play(Entity* TsEntity, UObject* Target,
-                     const std::map<std::string, std::string>& Params) {
+bool SkeletalMeshHandler::Update(Entity* TsEntity, UObject* Target,
+                        std::map<std::string, std::string> Params) {
     AActor* Actor = Cast<AActor>(Target);
     if (!Actor) {
-        // If Target is the SkeletalMesh itself, find the actor via entity
-        UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshHandler::Play - Target is not AActor"));
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshHandler::Update - Target is not AActor"));
+        return false;
     }
 
     USkeletalMeshComponent* MeshComponent = GetMeshComponent(Actor);
     if (!MeshComponent) {
-        UE_LOG(LogTemp, Error, TEXT("SkeletalMeshHandler::Play - No SkeletalMeshComponent"));
-        return;
+        UE_LOG(LogTemp, Error, TEXT("SkeletalMeshHandler::Update - No SkeletalMeshComponent"));
+        return false;
     }
 
-    FAnimationParams AnimParams = PropertyParser::ParseAnimationParams(Params);
+    auto OpIt = Params.find("Operation");
+    if (OpIt == Params.end()) {
+        // No operation specified, just apply transform
+        return false;
+    }
 
-    if (AnimParams.AnimationName != NAME_None) {
-        UAnimSequenceBase* Animation = FindObject<UAnimSequenceBase>(nullptr, *AnimParams.AnimationName.ToString());
-        if (Animation) {
-            MeshComponent->PlayAnimation(Animation, AnimParams.bLooping);
-        } else {
-            UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshHandler::Play - Animation not found: %s"),
-                   *AnimParams.AnimationName.ToString());
+    std::string Operation = OpIt->second;
+
+    if (Operation == "Play") {
+        FAnimationParams AnimParams = PropertyParser::ParseAnimationParams(Params);
+
+        if (AnimParams.AnimationName != NAME_None) {
+            UAnimSequenceBase* Animation = FindObject<UAnimSequenceBase>(nullptr, *AnimParams.AnimationName.ToString());
+            if (Animation) {
+                MeshComponent->PlayAnimation(Animation, AnimParams.bLooping);
+            } else {
+                UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshHandler::Update - Animation not found: %s"),
+                       *AnimParams.AnimationName.ToString());
+            }
         }
+
+        UE_LOG(LogTemp, Log, TEXT("SkeletalMeshHandler::Update - Play animation for entity %d"),
+               TsEntity->ID);
+        return true;
+    }
+    else if (Operation == "Stop") {
+        MeshComponent->StopAnimation();
+        UE_LOG(LogTemp, Log, TEXT("SkeletalMeshHandler::Update - Stop animation for entity %d"),
+               TsEntity->ID);
+        return true;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("SkeletalMeshHandler::Play - Playing animation for entity %d"),
-           TsEntity->ID);
-}
-
-void SkeletalMeshHandler::Stop(Entity* TsEntity, UObject* Target) {
-    AActor* Actor = Cast<AActor>(Target);
-    if (!Actor) return;
-
-    USkeletalMeshComponent* MeshComponent = GetMeshComponent(Actor);
-    if (!MeshComponent) return;
-
-    MeshComponent->StopAnimation();
-
-    UE_LOG(LogTemp, Log, TEXT("SkeletalMeshHandler::Stop - Stopped animation for entity %d"),
-           TsEntity->ID);
+    return false;
 }
 
 void SkeletalMeshHandler::ApplyProperties(UObject* Target,
