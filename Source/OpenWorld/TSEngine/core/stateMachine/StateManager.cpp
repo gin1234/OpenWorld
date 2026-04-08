@@ -4,60 +4,73 @@
 #include <ResourceStateCfg.h>
 #include <PrefabCfg.h>
 #include <resource/ResourceManager.h>
+
 namespace TSEngine {
-	void StateManager::Update()
-	{	
-		OnClose();
-		OnLoad();
-		OnRender();
-	}
-	void StateManager::OnLoad()
-	{
-		std::vector<Entity*> entities = EntityManager::GetInstance()->FetchLoadEntity();
 
-		for (Entity* item : entities) {
-			std::string entityType =  item->EntityType;
-			if (entityStateMap.contains(entityType)) {
-				auto entityState = EntityState(entityType);
-				entityStateMap[entityType] = entityState;
-			}
-			Resource res = ResourceCfg::GetInstance().Get(entityType);
-			Prefab prefab = PrefabCfg::GetInstance().Get(res.prefabId);
-			bool ok = ResourceManager::GetInstance()->Load(item,prefab);
-			if (!ok) {
-				// ÐÞ¸Äentity×´Ì¬£¬¼ÓÔØÊ§°Ü
-				item->Status = EntityLifeStatus::FailLoad;
-				continue;
-			}
-			// ÐÞ¸Ä×´Ì¬¼ÓÔØÖÐ
-			item->Status = EntityLifeStatus::Loading;
-			loadingEntities.push_back(item);
-		}
-	}
-	void StateManager::OnRender()
-	{
-		std::vector<Entity*> entities = EntityManager::GetInstance()->FetchRenderEntity();
-
-		for (Entity* item : entities) {
-			std::string entityType = item->EntityType;
-			auto it = entityStateMap.find(entityType);
-			if ( it != entityStateMap.end()) {
-				continue;
-			}
-
-			EntityState entityState = it->second;
-			std::string resStateId = entityState.MatchState(item);
-			if (resStateId.empty()) {
-				continue;
-			}
-			ResourceState resState = ResourceStateCfg::GetInstance().Get(resStateId);
-			bool ok = ResourceManager::GetInstance()->Update(entityType, item, resState.property);
-			if (!ok) {
-				continue;
-			}
-		}
-	}
-	void StateManager::OnClose()
-	{
-	}
+void StateManager::Update()
+{
+    OnClose();
+    OnLoad();
+    OnRender();
 }
+
+void StateManager::OnLoad()
+{
+    std::vector<Entity*> entities = EntityManager::GetInstance()->FetchLoadEntity();
+
+    for (Entity* item : entities) {
+        std::string entityType = item->EntityType;
+
+        if (entityStateMap.find(entityType) == entityStateMap.end()) {
+            EntityState entityState(entityType);
+            entityStateMap[entityType] = entityState;
+        }
+
+        Resource res = ResourceCfg::GetInstance().Get(entityType);
+        Prefab prefab = PrefabCfg::GetInstance().Get(res.prefabId);
+
+        bool ok = ResourceManager::GetInstance()->Load(item, prefab);
+        if (!ok) {
+            item->Status = EntityLifeStatus::FailLoad;
+            continue;
+        }
+
+        item->Status = EntityLifeStatus::Loading;
+        loadingEntities.push_back(item);
+    }
+}
+
+void StateManager::OnRender()
+{
+    std::vector<Entity*> entities = EntityManager::GetInstance()->FetchRenderEntity();
+
+    for (Entity* item : entities) {
+        std::string entityType = item->EntityType;
+
+        auto it = entityStateMap.find(entityType);
+        if (it == entityStateMap.end()) {
+            continue;
+        }
+
+        EntityState entityState = it->second;
+        std::string resStateId = entityState.MatchState(item);
+        if (resStateId.empty()) {
+            continue;
+        }
+
+        ResourceState resState = ResourceStateCfg::GetInstance().Get(resStateId);
+
+        // èŽ·å–èµ„æºç±»åž‹è€Œéžå®žä½“ç±»åž‹
+        Resource res = ResourceCfg::GetInstance().Get(entityType);
+        bool ok = ResourceManager::GetInstance()->Update(res.type, item, resState.property);
+        if (!ok) {
+            continue;
+        }
+    }
+}
+
+void StateManager::OnClose()
+{
+}
+
+} // namespace TSEngine
