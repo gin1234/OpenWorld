@@ -59,10 +59,7 @@ void StateManager::OnRender()
         }
 
         ResourceState resState = ResourceStateCfg::GetInstance().Get(resStateId);
-
-        // 获取资源类型而非实体类型
-        Resource res = ResourceCfg::GetInstance().Get(entityType);
-        bool ok = ResourceManager::GetInstance()->Update(res.type, item, resState.property);
+        bool ok = ResourceManager::GetInstance()->Update(entityType, item, resState.property);
         if (!ok) {
             continue;
         }
