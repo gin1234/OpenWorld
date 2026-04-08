@@ -23,11 +23,11 @@ void ResourceManager::RegisterHandler(const std::string& Type, IResourceHandler*
 void ResourceManager::RegisterPlayableHandler(const std::string& Type, IPlayableResourceHandler* Handler) {
     if (Handler) {
         PlayableHandlers[Type] = Handler;
-        Handlers[Type] = Handler; // Also register in base handlers map
+        Handlers[Type] = Handler;
     }
 }
 
-bool ResourceManager::Load(Entity* TsEntity, const Prefab& Prefab) {
+bool ResourceManager::Load(Entity* TsEntity, const Prefab& Prefab, std::function<void(Entity*)> OnLoaded) {
     auto it = Handlers.find(Prefab.prefabType);
     if (it == Handlers.end()) {
         UE_LOG(LogTemp, Warning, TEXT("No handler for resource type: %s"),
@@ -39,8 +39,11 @@ bool ResourceManager::Load(Entity* TsEntity, const Prefab& Prefab) {
     FSoftObjectPath Path(UTF8_TO_TCHAR(Prefab.path.c_str()));
 
     FResourceLoadedCallback Callback;
-    Callback.OnLoaded = [this, TsEntity, Prefab, Handler](UObject* LoadedObject) {
+    Callback.OnLoaded = [this, TsEntity, Prefab, Handler, OnLoaded](UObject* LoadedObject) {
         NotifyLoadSuccess(TsEntity, Prefab, LoadedObject);
+        if (OnLoaded) {
+            OnLoaded(TsEntity);
+        }
     };
 
     Callback.OnFailed = [this, TsEntity]() {
@@ -65,13 +68,15 @@ void ResourceManager::NotifyLoadSuccess(Entity* TsEntity, const Prefab& Prefab, 
 
     IResourceHandler* Handler = HandlerIt->second;
 
-    // Check if it's a playable resource handler first (SkeletalMesh, Sound, ParticleSystem)
+    // Check if it's a playable resource handler (SkeletalMesh, Sound, ParticleSystem)
     IPlayableResourceHandler* PlayableHandler = dynamic_cast<IPlayableResourceHandler*>(Handler);
     if (PlayableHandler) {
         AActor* Actor = PlayableHandler->CreateActor(TsEntity, LoadedObject, {});
         if (Actor) {
             TsEntity->Status = EntityLifeStatus::Rendering;
+            TsEntity->Actor = Actor;
             LoadedResources[TsEntity->ID][Prefab.prefabType] = LoadedObject;
+            EntityActors[TsEntity->ID][Prefab.prefabType] = Actor;
         } else {
             TsEntity->Status = EntityLifeStatus::FailLoad;
         }
@@ -84,7 +89,9 @@ void ResourceManager::NotifyLoadSuccess(Entity* TsEntity, const Prefab& Prefab, 
         AActor* Actor = LoadOnlyHandler->CreateActor(TsEntity, LoadedObject, {});
         if (Actor) {
             TsEntity->Status = EntityLifeStatus::Rendering;
+            TsEntity->Actor = Actor;
             LoadedResources[TsEntity->ID][Prefab.prefabType] = LoadedObject;
+            EntityActors[TsEntity->ID][Prefab.prefabType] = Actor;
         } else {
             TsEntity->Status = EntityLifeStatus::FailLoad;
         }
@@ -114,7 +121,7 @@ bool ResourceManager::Update(const std::string& Type, Entity* TsEntity,
         return false;
     }
 
-    // Try playable handler first (SkeletalMesh, Sound, ParticleSystem)
+    // Try playable handler first
     IPlayableResourceHandler* PlayableHandler = dynamic_cast<IPlayableResourceHandler*>(it->second);
     if (PlayableHandler) {
         return PlayableHandler->Update(TsEntity, Resource, Property);
@@ -126,10 +133,9 @@ bool ResourceManager::Update(const std::string& Type, Entity* TsEntity,
         return UpdatableHandler->Update(TsEntity, Resource, Property);
     }
 
-    // Try load-only handler (apply transform to Actor)
+    // Try load-only handler (apply transform)
     ILoadOnlyResourceHandler* LoadOnlyHandler = dynamic_cast<ILoadOnlyResourceHandler*>(it->second);
     if (LoadOnlyHandler) {
-        // For StaticMesh, apply transform updates
         AActor* Actor = Cast<AActor>(Resource);
         if (Actor) {
             for (const auto& [Key, Value] : Property) {
@@ -146,6 +152,41 @@ bool ResourceManager::Update(const std::string& Type, Entity* TsEntity,
     }
 
     return false;
+}
+
+void ResourceManager::DestroyActor(Entity* TsEntity, const std::string& Type) {
+    auto entityIt = EntityActors.find(TsEntity->ID);
+    if (entityIt == EntityActors.end()) {
+        return;
+    }
+
+    auto typeIt = entityIt->second.find(Type);
+    if (typeIt == entityIt->second.end()) {
+        return;
+    }
+
+    AActor* Actor = typeIt->second;
+    if (Actor && !Actor->IsActorBeingDestroyed()) {
+        Actor->Destroy();
+    }
+}
+
+void ResourceManager::ReleaseEntity(Entity* TsEntity) {
+    if (!TsEntity) return;
+
+    // 销毁所有关联的 Actor
+    auto entityIt = EntityActors.find(TsEntity->ID);
+    if (entityIt != EntityActors.end()) {
+        for (auto& [Type, Actor] : entityIt->second) {
+            if (Actor && !Actor->IsActorBeingDestroyed()) {
+                Actor->Destroy();
+            }
+        }
+        EntityActors.erase(entityIt);
+    }
+
+    // 释放资源
+    ReleaseEntityResources(TsEntity->ID);
 }
 
 UObject* ResourceManager::GetLoadedResource(int32 EntityId, const std::string& Type) {

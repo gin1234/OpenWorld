@@ -24,10 +24,18 @@ namespace TSEngine {
 
         int CreateEntity(const std::string& EntityType);
 
+        void AddRenderEntity(Entity* entity);
+
         void PreDestroyEntity(int EntityId);
 
         std::vector<Entity*> FetchLoadEntity();
 
         std::vector<Entity*> FetchRenderEntity();
+
+        std::vector<Entity*> FetchDestroyEntity();
+
+        Entity* GetEntity(int EntityId);
+
+        void RemoveEntity(int EntityId);
 	};
 }
