@@ -59,7 +59,9 @@ void StateManager::OnRender()
         }
 
         ResourceState resState = ResourceStateCfg::GetInstance().Get(resStateId);
-        bool ok = ResourceManager::GetInstance()->Update(entityType, item, resState.property);
+        Resource res = ResourceCfg::GetInstance().Get(entityType);
+        Prefab prefab = PrefabCfg::GetInstance().Get(res.prefabId);
+        bool ok = ResourceManager::GetInstance()->Update(prefab.prefabType, item, resState.property);
         if (!ok) {
             continue;
         }
