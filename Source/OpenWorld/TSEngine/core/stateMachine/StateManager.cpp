@@ -4,14 +4,27 @@
 #include <ResourceStateCfg.h>
 #include <PrefabCfg.h>
 #include <resource/ResourceManager.h>
+#include <transport/MessageManager.h>
 
 namespace TSEngine {
+
+void StateManager::SetTickCallback(std::function<void()> callback)
+{
+    TickCallback = callback;
+}
 
 void StateManager::Update()
 {
     OnClose();
     OnLoad();
     OnRender();
+
+    // 通知 TS 进行消息处理
+    // TS 会在 callback 内部调用 MessageManager.Instance().FetchMessage() 获取消息
+    // 然后调用 rootEntity.tick(messages)
+    if (TickCallback) {
+        TickCallback();
+    }
 }
 
 void StateManager::OnLoad()
@@ -71,8 +84,8 @@ void StateManager::OnRender()
         }
 
         ResourceState resState = ResourceStateCfg::GetInstance()->Get(resStateId);
-        Resource res = ResourceCfg::GetInstance()->Get(entityType);
-        Prefab prefab = PrefabCfg::GetInstance()->Get(res.prefabId);
+        Resource res = ResourceCfg::GetInstance().Get(entityType);
+        Prefab prefab = PrefabCfg::GetInstance().Get(res.prefabId);
         bool ok = ResourceManager::GetInstance()->Update(prefab.prefabType, item, resState.property);
         if (!ok) {
             continue;
